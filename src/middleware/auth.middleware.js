@@ -16,6 +16,7 @@ export async function protegerRoute(req, res, next) {
       return res.status(401).json({ message: "Utilisateur introuvable." });
     }
     req.utilisateur = utilisateur;
+    next();
   } catch {
     return res.status(401).json({ message: "Token invalide ou expiré." });
   }
@@ -26,5 +27,6 @@ export function autoriserRoles(...roles) {
     if (!roles.includes(req.utilisateur?.role)) {
       return res.status(403).json({ message: "Accès refusé pour ce rôle." });
     }
+    next();
   };
 }

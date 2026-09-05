@@ -12,9 +12,9 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function hashPassword(next) {
-  if (!this.isModified("motDePasse")) return next();
+  if (!this.isModified("motDePasse")) return;
+  
   this.motDePasse = await bcrypt.hash(this.motDePasse, 12);
-  next();
 });
 
 userSchema.methods.comparerMotDePasse = function comparerMotDePasse(motDePasseCandidat) {

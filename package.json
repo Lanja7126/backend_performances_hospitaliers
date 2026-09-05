@@ -1,7 +1,7 @@
 {
   "name": "plateforme-hospitaliere-backend",
   "version": "1.0.0",
-  "description": "API backend - Plateforme Analytique des Performances Hospitali\u00e8res R\u00e9gionales (Madagascar)",
+  "description": "API backend - Plateforme Analytique des Performances Hospitalières Régionales (Madagascar)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -21,7 +21,7 @@
     "express-rate-limit": "^8.6.2",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.9.4",
+    "mongoose": "^9.9.1",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "papaparse": "^5.7.0",

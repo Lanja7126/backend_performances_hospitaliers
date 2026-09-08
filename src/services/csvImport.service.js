@@ -1,7 +1,11 @@
 import Papa from "papaparse";
 import RapportMensuel from "../models/RapportMensuel.js";
-import { calculerVariablesDerivees, CHAMPS_OBLIGATOIRES } from "./featureEngineering.service.js";
+import {
+  calculerVariablesDerivees,
+  CHAMPS_OBLIGATOIRES,
+} from "./featureEngineering.service.js";
 import { recalculerIndicateursGlobaux } from "./metrics.service.js";
+import { predireCluster } from "./ml.service.js";
 
 class ErreurImportCSV extends Error {
   constructor(message, details = []) {
@@ -13,7 +17,10 @@ class ErreurImportCSV extends Error {
 
 function validerLigne(ligne, index) {
   const manquants = CHAMPS_OBLIGATOIRES.filter(
-    (champ) => ligne[champ] === undefined || ligne[champ] === null || ligne[champ] === ""
+    (champ) =>
+      ligne[champ] === undefined ||
+      ligne[champ] === null ||
+      ligne[champ] === "",
   );
   if (manquants.length > 0) {
     return `Ligne ${index + 2} : champ(s) manquant(s) — ${manquants.join(", ")}`;
@@ -31,29 +38,53 @@ export async function importerCSV(fileBuffer) {
   });
 
   if (errors.length > 0) {
-    throw new ErreurImportCSV("Erreur de lecture du CSV", errors.map((e) => e.message));
+    throw new ErreurImportCSV(
+      "Erreur de lecture du CSV",
+      errors.map((e) => e.message),
+    );
   }
   if (data.length === 0) {
-    throw new ErreurImportCSV("Le fichier CSV ne contient aucune ligne exploitable.");
+    throw new ErreurImportCSV(
+      "Le fichier CSV ne contient aucune ligne exploitable.",
+    );
   }
 
   const erreursValidation = data.map(validerLigne).filter(Boolean);
   if (erreursValidation.length > 0) {
-    throw new ErreurImportCSV("Certaines lignes sont invalides", erreursValidation.slice(0, 20));
+    throw new ErreurImportCSV(
+      "Certaines lignes sont invalides",
+      erreursValidation.slice(0, 20),
+    );
   }
 
-  const operations = data.map((ligne) => {
+  const operations = [];
+
+  for (const ligne of data) {
     const document = calculerVariablesDerivees(ligne);
-    return {
+
+    const cluster = await predireCluster(document);
+
+    document.cluster = cluster.cluster;
+    document.categorie = cluster.categorie;
+
+    operations.push({
       updateOne: {
-        filter: { code_hopital: document.code_hopital, annee: document.annee, mois: document.mois },
-        update: { $set: document },
+        filter: {
+          code_hopital: document.code_hopital,
+          annee: document.annee,
+          mois: document.mois,
+        },
+        update: {
+          $set: document,
+        },
         upsert: true,
       },
-    };
-  });
+    });
+  }
 
-  const resultat = await RapportMensuel.bulkWrite(operations, { ordered: false });
+  const resultat = await RapportMensuel.bulkWrite(operations, {
+    ordered: false,
+  });
   const indicateurs = await recalculerIndicateursGlobaux();
 
   return {

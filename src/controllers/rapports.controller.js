@@ -3,6 +3,7 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { importerCSV } from "../services/csvImport.service.js";
 import { calculerVariablesDerivees } from "../services/featureEngineering.service.js";
 import { recalculerIndicateursGlobaux } from "../services/metrics.service.js";
+import { predireCluster } from "../services/ml.service.js";
 
 export const importerRapportsCSV = asyncHandler(async (req, res) => {
   if (!req.file) {
@@ -16,6 +17,11 @@ export const importerRapportsCSV = asyncHandler(async (req, res) => {
 /** Création manuelle d'un rapport (formulaire progressif côté frontend). */
 export const creerRapportManuel = asyncHandler(async (req, res) => {
   const document = calculerVariablesDerivees(req.body);
+
+  const cluster = await predireCluster(document);
+
+  document.cluster = cluster.cluster;
+  document.categorie = cluster.categorie;
 
   const rapport = await RapportMensuel.findOneAndUpdate(
     { code_hopital: document.code_hopital, annee: document.annee, mois: document.mois },

@@ -4,6 +4,7 @@ import { env } from "../config/env.js";
 const client = axios.create({ baseURL: env.mlServiceUrl, timeout: 8000 });
 
 async function appelerServiceML(endpoint, payload) {
+	console.log("➡️ ML URL :", `${env.mlServiceUrl}${endpoint}`);
   try {
     const { data } = await client.post(endpoint, payload);
     return data;
@@ -17,6 +18,11 @@ async function appelerServiceML(endpoint, payload) {
     }
     const erreur = new Error(err.response?.data?.detail || "Erreur du service de prédiction.");
     erreur.status = err.response?.status || 502;
+	console.error("❌ ML ERROR");
+    console.error("code :", err.code);
+    console.error("message :", err.message);
+    console.error("status :", err.response?.status);
+    console.error("data :", err.response?.data);
     throw erreur;
   }
 }
